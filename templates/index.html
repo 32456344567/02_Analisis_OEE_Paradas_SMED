@@ -1,0 +1,1165 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Grandma EDNA's Biscuits | Control Operacional OEE & Reducción SMED</title>
+    <!-- Google Fonts Inter & JetBrains Mono -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- ApexCharts CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/apexcharts"></script>
+    <!-- FontAwesome 6 -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
+
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                        mono: ['JetBrains Mono', 'monospace'],
+                    },
+                    colors: {
+                        scada: {
+                            sidebar: '#0A1120',
+                            card: '#0F172A',
+                            border: '#1E293B',
+                            accent: '#2563EB',
+                            emerald: '#10B981',
+                            amber: '#F59E0B',
+                            rose: '#EF4444',
+                            sky: '#0EA5E9'
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #F8FAFC;
+            color: #0F172A;
+            overflow-x: hidden;
+        }
+        .mono { font-family: 'JetBrains Mono', monospace; }
+        
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: #F1F5F9; }
+        ::-webkit-scrollbar-thumb { background: #CBD5E1; border-radius: 3px; }
+        ::-webkit-scrollbar-thumb:hover { background: #94A3B8; }
+
+        .card-elevated {
+            background: #FFFFFF;
+            border: 1px solid #E2E8F0;
+            box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.05), 0 1px 2px -1px rgba(0, 0, 0, 0.05);
+            border-radius: 12px;
+            transition: box-shadow 0.2s ease;
+        }
+        .card-elevated:hover {
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.07), 0 2px 4px -2px rgba(0, 0, 0, 0.05);
+        }
+
+        .nav-tab-btn {
+            transition: all 0.2s ease;
+        }
+        .nav-tab-btn.active {
+            background-color: #2563EB;
+            color: #FFFFFF;
+            font-weight: 600;
+            box-shadow: 0 2px 8px rgba(37, 99, 235, 0.35);
+        }
+        .nav-tab-btn:not(.active):hover {
+            background-color: rgba(255, 255, 255, 0.06);
+            color: #F8FAFC;
+        }
+
+        .btn-preset.active {
+            background-color: #2563EB;
+            color: #FFFFFF;
+            border-color: #2563EB;
+            font-weight: 700;
+        }
+        .btn-preset:not(.active) {
+            background-color: #F8FAFC;
+            color: #334155;
+            border-color: #CBD5E1;
+        }
+        .btn-preset:not(.active):hover {
+            background-color: #F1F5F9;
+            border-color: #94A3B8;
+        }
+    </style>
+</head>
+<body class="flex h-screen w-screen overflow-hidden">
+
+    <!-- ===================================================================== -->
+    <!-- 1. BARRA LATERAL EJECUTIVA (DARK NAVY - EXACTA A PROYECTO 1)          -->
+    <!-- ===================================================================== -->
+    <aside class="w-80 flex-shrink-0 bg-[#0A1120] text-slate-300 flex flex-col justify-between border-r border-slate-800 z-20 overflow-y-auto">
+        
+        <!-- Header & Menús -->
+        <div class="p-5 space-y-5">
+            
+            <!-- Logo & Identificador de Planta -->
+            <div>
+                <div class="inline-flex items-center gap-2 px-2.5 py-1 rounded-full bg-blue-500/10 border border-blue-400/30 text-blue-400 text-xs font-mono font-bold tracking-wide">
+                    <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+                    PLANTA INDUSTRIAL • 2 LÍNEAS
+                </div>
+                <h1 class="text-white text-lg font-extrabold tracking-tight mt-2">GRANDMA EDNA'S</h1>
+                <p class="text-xs text-slate-400 font-medium">Control Operacional OEE & SMED</p>
+            </div>
+
+            <!-- Navegación de 4 Vistas Claras -->
+            <div class="space-y-1.5">
+                <div class="text-[11px] font-mono uppercase tracking-wider text-slate-400 font-semibold mb-2">Vistas del Tablero</div>
+                
+                <button onclick="switchTab('tab-diagnostico')" id="btn-tab-diagnostico" 
+                    class="nav-tab-btn active w-full flex items-center gap-3 px-3.5 py-2.5 rounded-lg text-sm font-medium text-slate-300 text-left">
+                    <i class="fa-solid fa-chart-pie text-base w-5 text-center"></i>
+                    <span>01. Diagnóstico & OEE Planta</span>
+                </button>
+
+                <button onclick="switchTab('tab-restriccion')" id="btn-tab-restriccion" 
+                    class="nav-tab-btn w-full flex items-center gap-3 px-3.5 py-2.5 rounded-lg text-sm font-medium text-slate-300 text-left">
+                    <i class="fa-solid fa-triangle-exclamation text-base w-5 text-center text-amber-400"></i>
+                    <span>02. Cuello de Botella & Paradas</span>
+                </button>
+
+                <button onclick="switchTab('tab-smed')" id="btn-tab-smed" 
+                    class="nav-tab-btn w-full flex items-center gap-3 px-3.5 py-2.5 rounded-lg text-sm font-medium text-slate-300 text-left">
+                    <i class="fa-solid fa-coins text-base w-5 text-center text-emerald-400"></i>
+                    <span>03. Plan SMED & Simulación</span>
+                </button>
+
+                <button onclick="switchTab('tab-sql')" id="btn-tab-sql" 
+                    class="nav-tab-btn w-full flex items-center gap-3 px-3.5 py-2.5 rounded-lg text-sm font-medium text-slate-300 text-left">
+                    <i class="fa-solid fa-database text-base w-5 text-center text-sky-400"></i>
+                    <span>04. Consola SQL DuckDB</span>
+                </button>
+            </div>
+
+            <!-- Filtros de Operación -->
+            <div class="space-y-3 pt-2 border-t border-slate-800/80">
+                <div class="text-[11px] font-mono uppercase tracking-wider text-slate-400 font-semibold">
+                    Filtro de Línea
+                </div>
+                
+                <div>
+                    <div class="relative">
+                        <select id="lineFilter" onchange="onFilterChange()" 
+                            class="w-full bg-[#0F172A] border border-slate-700 text-white text-xs rounded-lg px-3 py-2 pr-8 focus:ring-2 focus:ring-blue-500 focus:outline-none appearance-none font-medium cursor-pointer">
+                            <option value="all">🏭 Toda la Planta (10 Máquinas)</option>
+                            <option value="line1">Línea 1: Sandwich (70% Ventas)</option>
+                            <option value="line2">Línea 2: Prensadas / Especialidad</option>
+                        </select>
+                        <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2.5 text-slate-400">
+                            <i class="fa-solid fa-chevron-down text-xs"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Datos de Planta Auditados -->
+            <div class="pt-2 border-t border-slate-800/80 space-y-2">
+                <div class="text-[11px] font-mono uppercase tracking-wider text-slate-400 font-semibold">Parámetros Auditados</div>
+                <div class="bg-[#0F172A]/80 border border-slate-800 rounded-lg p-3 space-y-1.5 text-xs">
+                    <div class="flex justify-between"><span class="text-slate-400">Base Temporal:</span> <span class="font-mono text-slate-200">Julio 2021 (744 h)</span></div>
+                    <div class="flex justify-between"><span class="text-slate-400">Parque Activos:</span> <span class="font-mono text-slate-200">10 Máquinas</span></div>
+                    <div class="flex justify-between"><span class="text-slate-400">Restricción:</span> <span class="font-mono text-rose-400 font-bold">Llenadora (37.9% OEE)</span></div>
+                    <div class="flex justify-between"><span class="text-slate-400">Meta Clase Mundial:</span> <span class="font-mono text-emerald-400 font-semibold">85.0% OEE</span></div>
+                </div>
+            </div>
+
+        </div>
+
+        <!-- Footer / Firma de Autor (Exacta a Proyecto 1) -->
+        <div class="p-5 border-t border-slate-800 bg-[#070B14]">
+            <div class="flex items-center gap-2 mb-1">
+                <span class="w-2 h-2 rounded-full bg-emerald-400"></span>
+                <span class="text-[11px] font-mono text-emerald-400 font-bold uppercase tracking-wider">OEE ANALYTICS • ANSI/ISA-95</span>
+            </div>
+            <div class="text-sm font-bold text-white tracking-tight">Ing. Angelo Apolo</div>
+            <div class="text-[11px] text-slate-400">Ingeniero Químico | Esp. Optimización & Datos</div>
+        </div>
+    </aside>
+
+    <!-- ===================================================================== -->
+    <!-- 2. CONTENEDOR PRINCIPAL (LIGHT CANVAS - ESTILO PROYECTO 1)           -->
+    <!-- ===================================================================== -->
+    <main class="flex-1 flex flex-col h-screen overflow-y-auto bg-[#F8FAFC]">
+
+        <!-- ================================================================= -->
+        <!-- TAB 1: DIAGNÓSTICO & OEE PLANTA                                   -->
+        <!-- ================================================================= -->
+        <div id="tab-diagnostico" class="tab-content p-6 space-y-5">
+            
+            <!-- Banner Superior -->
+            <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-1">
+                <div>
+                    <h2 class="text-2xl font-extrabold text-slate-900 tracking-tight">Diagnóstico Global de Eficiencia OEE</h2>
+                    <p class="text-xs text-slate-500 font-medium mt-0.5">
+                        Evaluación integral de 744 horas de producción • Descomposición Canónica A × P × Q vs Meta Clase Mundial (85%)
+                    </p>
+                </div>
+                <div class="flex items-center gap-3">
+                    <div class="bg-rose-50 border border-rose-200 text-rose-800 text-xs px-3.5 py-1.5 rounded-lg font-medium flex items-center gap-2 shadow-sm">
+                        <i class="fa-solid fa-circle-exclamation text-rose-600"></i>
+                        <span>Brecha OEE vs Clase Mundial: <b class="font-mono text-rose-700">-26.79 pts</b></span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Fila de 4 Tarjetas KPI Claras -->
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+                
+                <!-- KPI 1: OEE Medio -->
+                <div class="card-elevated p-4 border-t-4 border-t-blue-600 flex flex-col justify-between">
+                    <div class="flex items-center justify-between text-xs font-mono font-bold text-slate-500 tracking-wider">
+                        <span>OEE MEDIO PLANTA</span>
+                        <span class="text-slate-400">GLOBAL</span>
+                    </div>
+                    <div class="my-2 flex items-baseline gap-2">
+                        <span id="kpi-oee" class="text-3xl font-extrabold font-mono text-slate-900">58.21</span>
+                        <span class="text-xs font-mono text-slate-500">%</span>
+                    </div>
+                    <div class="text-[11px] text-slate-500">
+                        Meta Clase Mundial: <b class="text-slate-700 font-mono">85.0% (-26.8 pts)</b>
+                    </div>
+                </div>
+
+                <!-- KPI 2: Disponibilidad -->
+                <div class="card-elevated p-4 border-t-4 border-t-amber-500 flex flex-col justify-between">
+                    <div class="flex items-center justify-between text-xs font-mono font-bold text-slate-500 tracking-wider">
+                        <span>DISPONIBILIDAD (A)</span>
+                        <span class="text-slate-400">TIEMPO</span>
+                    </div>
+                    <div class="my-2 flex items-baseline gap-2">
+                        <span id="kpi-avail" class="text-3xl font-extrabold font-mono text-amber-600">80.12</span>
+                        <span class="text-xs font-mono text-slate-500">%</span>
+                    </div>
+                    <div class="text-[11px] text-slate-500">
+                        Horas detenidas en julio: <b id="kpi-down-hours" class="text-slate-700 font-mono">147.9 h</b>
+                    </div>
+                </div>
+
+                <!-- KPI 3: Rendimiento -->
+                <div class="card-elevated p-4 border-t-4 border-t-indigo-500 flex flex-col justify-between">
+                    <div class="flex items-center justify-between text-xs font-mono font-bold text-slate-500 tracking-wider">
+                        <span>RENDIMIENTO (P)</span>
+                        <span class="text-slate-400">VELOCIDAD</span>
+                    </div>
+                    <div class="my-2 flex items-baseline gap-2">
+                        <span id="kpi-perf" class="text-3xl font-extrabold font-mono text-indigo-600">74.05</span>
+                        <span class="text-xs font-mono text-slate-500">%</span>
+                    </div>
+                    <div class="text-[11px] text-slate-500">
+                        Velocidad real Llenadora: <b class="text-slate-700 font-mono">38.5k / 51.8k u/h</b>
+                    </div>
+                </div>
+
+                <!-- KPI 4: Calidad -->
+                <div class="card-elevated p-4 border-t-4 border-t-emerald-500 flex flex-col justify-between">
+                    <div class="flex items-center justify-between text-xs font-mono font-bold text-slate-500 tracking-wider">
+                        <span>CALIDAD (Q)</span>
+                        <span class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-emerald-100 text-emerald-800 text-[10px] font-bold">
+                            ALTA
+                        </span>
+                    </div>
+                    <div class="my-2 flex items-baseline gap-2">
+                        <span id="kpi-qual" class="text-3xl font-extrabold font-mono text-emerald-600">98.24</span>
+                        <span class="text-xs font-mono text-slate-500">%</span>
+                    </div>
+                    <div class="text-[11px] text-slate-500">
+                        Galletas vendibles: <b class="text-slate-700 font-mono">458.3 M u (1.76% scrap)</b>
+                    </div>
+                </div>
+
+            </div>
+
+            <!-- Gráfico Principal: Cascada del OEE (Tiempo Calendario a Tiempo Valioso) -->
+            <div class="card-elevated p-5">
+                <div class="flex flex-col lg:flex-row lg:items-center justify-between mb-3 gap-2">
+                    <div>
+                        <h3 class="text-sm font-bold text-slate-800">Cascada de Pérdidas de Tiempo (Waterfall OEE de Planta)</h3>
+                        <p class="text-xs text-slate-400">Desglose secuencial de cómo se consumen las 744 horas calendario del mes de julio</p>
+                    </div>
+                    <div class="flex items-center gap-3 text-xs font-medium text-slate-600">
+                        <span class="flex items-center gap-1.5"><span class="w-3 h-3 rounded-full bg-blue-600"></span> Tiempo Productivo</span>
+                        <span class="flex items-center gap-1.5"><span class="w-3 h-3 rounded-full bg-rose-500"></span> Pérdidas de Disponibilidad/Velocidad</span>
+                    </div>
+                </div>
+                <div id="chart-waterfall" class="w-full h-72"></div>
+            </div>
+
+            <!-- Fila Inferior: Donut de Categorías de Parada & Tarjeta de Racional de Negocio -->
+            <div class="grid grid-cols-1 lg:grid-cols-12 gap-4">
+                
+                <!-- Donut de Paradas (5 cols) -->
+                <div class="lg:col-span-5 card-elevated p-5 flex flex-col justify-between">
+                    <div>
+                        <h3 class="text-sm font-bold text-slate-800">Distribución de Paradas de Planta</h3>
+                        <p class="text-xs text-slate-400">Total de horas perdidas agrupadas por categoría operativa</p>
+                    </div>
+                    <div class="relative flex items-center justify-center my-auto">
+                        <div id="chart-loss-donut" class="w-full h-64"></div>
+                    </div>
+                </div>
+
+                <!-- Racional de Negocio Ejecutivo (7 cols) -->
+                <div class="lg:col-span-7 card-elevated p-5 flex flex-col justify-between space-y-3">
+                    <div>
+                        <h3 class="text-sm font-bold text-slate-800 flex items-center gap-2">
+                            <i class="fa-solid fa-briefcase text-blue-600"></i>
+                            <span>Diagnóstico Ejecutivo para Gerencia de Planta</span>
+                        </h3>
+                        <p class="text-xs text-slate-400">¿Qué nos dicen estos datos y qué decisión se debe tomar?</p>
+                    </div>
+
+                    <div class="space-y-2.5 text-xs text-slate-600">
+                        <div class="p-3 bg-slate-50 border border-slate-200 rounded-lg">
+                            <b class="text-slate-900 block mb-0.5">1. El Problema Central:</b>
+                            La fábrica opera a un <strong class="text-rose-600 font-mono">58.21% OEE</strong> frente a la meta mundial del 85.0%. Esto significa que el <strong>41.79% del tiempo productivo se evapora</strong> en paradas y reducciones de velocidad, dejando una brecha anual de capacidad estimada en <strong class="text-slate-900">$1,200,000 USD</strong>.
+                        </div>
+                        <div class="p-3 bg-slate-50 border border-slate-200 rounded-lg">
+                            <b class="text-slate-900 block mb-0.5">2. Dónde se Concentra la Pérdida:</b>
+                            La principal sangría de tiempo está en <strong class="text-slate-900">Limpiezas y Cambios de Formato (CC)</strong> con <strong class="text-amber-600 font-mono">573.6 horas</strong>, seguida de <strong class="text-slate-900">Averías Mecánicas Ocultas</strong> con <strong class="text-rose-600 font-mono">350.1 horas</strong>.
+                        </div>
+                        <div class="p-3 bg-blue-50/70 border border-blue-200 rounded-lg">
+                            <b class="text-blue-900 block mb-0.5">3. La Oportunidad de Negocio:</b>
+                            Atacar los cambios de formato con metodología <strong class="text-blue-700">Lean SMED</strong> en el equipo cuello de botella permite liberar <strong class="text-emerald-700 font-mono">+49.4 h/mes</strong> sin invertir en maquinaria nueva.
+                        </div>
+                    </div>
+
+                    <div class="pt-2 flex justify-end">
+                        <button onclick="switchTab('tab-restriccion')" class="px-3.5 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-xs font-semibold flex items-center gap-2 transition">
+                            <span>Ver Cuello de Botella</span>
+                            <i class="fa-solid fa-arrow-right text-xs"></i>
+                        </button>
+                    </div>
+                </div>
+
+            </div>
+
+        </div>
+
+        <!-- ================================================================= -->
+        <!-- TAB 2: CUELLO DE BOTELLA & PARADAS                                -->
+        <!-- ================================================================= -->
+        <div id="tab-restriccion" class="tab-content p-6 space-y-5 hidden">
+            
+            <!-- Banner Superior -->
+            <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-1">
+                <div>
+                    <h2 class="text-2xl font-extrabold text-slate-900 tracking-tight">Identificación de la Restricción (Cuello de Botella)</h2>
+                    <p class="text-xs text-slate-500 font-medium mt-0.5">
+                        Arquitectura de 2 líneas desacopladas • La Llenadora (`Biscuit Filling Machine`) marca el ritmo del 70% de las ventas
+                    </p>
+                </div>
+                <div class="flex items-center gap-3">
+                    <span class="bg-rose-100 border border-rose-300 text-rose-800 text-xs px-3 py-1.5 rounded-lg font-bold flex items-center gap-1.5">
+                        <i class="fa-solid fa-fire text-rose-600"></i> RESTRICCIÓN: Llenadora (OEE: 37.90%)
+                    </span>
+                </div>
+            </div>
+
+            <!-- Mapa Visual de las 2 Líneas de Producción -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                
+                <!-- Línea 1 -->
+                <div class="card-elevated p-4 border-l-4 border-l-blue-600">
+                    <div class="flex justify-between items-center mb-2">
+                        <h4 class="text-xs font-bold text-slate-800 uppercase tracking-wider">Línea 1: Galletas Sandwich (70% del Negocio)</h4>
+                        <span class="text-[10px] font-mono px-2 py-0.5 rounded bg-blue-100 text-blue-800 font-bold">7 MÁQUINAS</span>
+                    </div>
+                    <p class="text-[11px] text-slate-500 mb-3">6 SKUs de alto volumen: Bourbon, Custard, Jammy, Milk Cookies, Chocolate, Pink Wafers.</p>
+                    <div class="flex items-center justify-between text-xs bg-slate-50 p-2.5 rounded-lg border border-slate-200 text-slate-600 font-mono overflow-x-auto gap-2">
+                        <span>Mezcladora</span> &rarr;
+                        <span>Formadora</span> &rarr;
+                        <span>Horno</span> &rarr;
+                        <span class="bg-rose-100 text-rose-800 px-2 py-1 rounded font-black border border-rose-300">LLENADORA 37.9%</span> &rarr;
+                        <span>Decoradora</span> &rarr;
+                        <span>Envolvedora</span> &rarr;
+                        <span>Encajonadora</span>
+                    </div>
+                </div>
+
+                <!-- Línea 2 -->
+                <div class="card-elevated p-4 border-l-4 border-l-emerald-600">
+                    <div class="flex justify-between items-center mb-2">
+                        <h4 class="text-xs font-bold text-slate-800 uppercase tracking-wider">Línea 2: Galletas Prensadas / Especialidad (30% del Negocio)</h4>
+                        <span class="text-[10px] font-mono px-2 py-0.5 rounded bg-emerald-100 text-emerald-800 font-bold">3 MÁQUINAS</span>
+                    </div>
+                    <p class="text-[11px] text-slate-500 mb-3">12 SKUs: Digestives, Fruit & Nut, Hazelnut, Almond Biscotti, Party Rings, Viennese Creams.</p>
+                    <div class="flex items-center justify-between text-xs bg-slate-50 p-2.5 rounded-lg border border-slate-200 text-slate-600 font-mono overflow-x-auto gap-2">
+                        <span class="bg-slate-200 px-2 py-1 rounded">Prensadora 49.7%</span> &rarr;
+                        <span class="bg-amber-100 text-amber-800 px-2 py-1 rounded font-bold border border-amber-300">Rociadora 43.9% (Cuello L2)</span> &rarr;
+                        <span class="bg-slate-200 px-2 py-1 rounded">Dosif. Jam 72.2%</span>
+                    </div>
+                </div>
+
+            </div>
+
+            <!-- Fila de Gráficos: OEE por Máquina & Pareto de la Llenadora -->
+            <div class="grid grid-cols-1 lg:grid-cols-12 gap-4">
+                
+                <!-- Ranking OEE de Máquinas (6 cols) -->
+                <div class="lg:col-span-6 card-elevated p-5">
+                    <div class="mb-2">
+                        <h3 class="text-sm font-bold text-slate-800">Ranking OEE por Activo Industrial</h3>
+                        <p class="text-xs text-slate-400">Comparativa de los 10 activos (la Llenadora destaca en rojo como la peor)</p>
+                    </div>
+                    <div id="chart-machines-oee" class="w-full h-72"></div>
+                </div>
+
+                <!-- Pareto 80/20 de Paradas en Cuello de Botella (6 cols) -->
+                <div class="lg:col-span-6 card-elevated p-5">
+                    <div class="mb-2">
+                        <h3 class="text-sm font-bold text-slate-800">Pareto 80/20: ¿Por qué se detiene la Llenadora?</h3>
+                        <p class="text-xs text-slate-400">Los Cambios de Formato y Limpieza (CC) representan el 58.5% del tiempo parado</p>
+                    </div>
+                    <div id="chart-pareto-filling" class="w-full h-72"></div>
+                </div>
+
+            </div>
+
+            <!-- Tabla Resumen de Máquinas Auditadas -->
+            <div class="card-elevated overflow-hidden">
+                <div class="px-5 py-3 border-b border-slate-200 flex justify-between items-center bg-slate-50">
+                    <h4 class="text-xs font-bold text-slate-700 uppercase tracking-wider">Matriz Consolidada de Máquinas (Línea, OEE y Componentes)</h4>
+                    <span class="text-[11px] font-mono text-slate-500">10 Activos de Planta</span>
+                </div>
+                <div class="overflow-x-auto">
+                    <table class="w-full text-xs text-left">
+                        <thead class="bg-slate-100 text-slate-600 font-bold border-b border-slate-200">
+                            <tr>
+                                <th class="p-3">Máquina</th>
+                                <th class="p-3">Línea</th>
+                                <th class="p-3 text-right">Horas Planif.</th>
+                                <th class="p-3 text-right">Horas Marcha</th>
+                                <th class="p-3 text-right">Disponib. (A)</th>
+                                <th class="p-3 text-right">Rendimiento (P)</th>
+                                <th class="p-3 text-right">Calidad (Q)</th>
+                                <th class="p-3 text-right">OEE</th>
+                                <th class="p-3 text-center">Estado</th>
+                            </tr>
+                        </thead>
+                        <tbody id="table-machines-body" class="divide-y divide-slate-200 font-mono">
+                            <!-- Inyectado vía JS -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+        </div>
+
+        <!-- ================================================================= -->
+        <!-- TAB 3: PLAN SMED & SIMULACIÓN FINANCIERA                          -->
+        <!-- ================================================================= -->
+        <div id="tab-smed" class="tab-content p-6 space-y-5 hidden">
+            
+            <!-- Banner Superior -->
+            <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-1">
+                <div>
+                    <h2 class="text-2xl font-extrabold text-slate-900 tracking-tight">Caso de Negocio Lean SMED & Retorno Financiero</h2>
+                    <p class="text-xs text-slate-500 font-medium mt-0.5">
+                        Reducción de tiempos de cambio en la Llenadora • Liberación de capacidad sin comprar maquinaria de $250k USD
+                    </p>
+                </div>
+                <div class="flex items-center gap-3">
+                    <div class="bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs px-3.5 py-1.5 rounded-lg font-medium flex items-center gap-2 shadow-sm">
+                        <i class="fa-solid fa-coins text-emerald-600"></i>
+                        <span>Retorno de Inversión (Capex $23,800 USD) | Payback: <b class="font-mono text-emerald-700">14.9 DÍAS</b></span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Fila de 4 KPIs Financieros Impactantes -->
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+                
+                <!-- KPI 1: Beneficio Total -->
+                <div class="card-elevated p-4 border-t-4 border-t-emerald-500 flex flex-col justify-between">
+                    <div class="flex items-center justify-between text-xs font-mono font-bold text-slate-500 tracking-wider">
+                        <span>BENEFICIO ANUAL PROYECTADO</span>
+                        <span class="inline-flex items-center px-1.5 py-0.5 rounded bg-emerald-100 text-emerald-800 text-[10px] font-bold">
+                            EBITDA
+                        </span>
+                    </div>
+                    <div class="my-2 flex items-baseline gap-1">
+                        <span id="kpi-smed-benefit" class="text-3xl font-extrabold font-mono text-emerald-600">+$581,391</span>
+                        <span class="text-xs font-mono text-slate-500">USD/año</span>
+                    </div>
+                    <div class="text-[11px] text-slate-500">
+                        Margen bruto + $35k horas extra eliminadas
+                    </div>
+                </div>
+
+                <!-- KPI 2: Horas Recuperadas -->
+                <div class="card-elevated p-4 border-t-4 border-t-blue-500 flex flex-col justify-between">
+                    <div class="flex items-center justify-between text-xs font-mono font-bold text-slate-500 tracking-wider">
+                        <span>CAPACIDAD RECUPERADA</span>
+                        <span class="text-slate-400">TIEMPO</span>
+                    </div>
+                    <div class="my-2 flex items-baseline gap-1">
+                        <span id="kpi-smed-hours" class="text-3xl font-extrabold font-mono text-blue-600">+49.4</span>
+                        <span class="text-xs font-mono text-slate-500">h / mes</span>
+                    </div>
+                    <div class="text-[11px] text-slate-500">
+                        Capacidad anual liberada: <b id="kpi-smed-hours-year" class="text-slate-700 font-mono">+592.9 h/año</b>
+                    </div>
+                </div>
+
+                <!-- KPI 3: Producción Vendible Extra -->
+                <div class="card-elevated p-4 border-t-4 border-t-indigo-500 flex flex-col justify-between">
+                    <div class="flex items-center justify-between text-xs font-mono font-bold text-slate-500 tracking-wider">
+                        <span>PRODUCCIÓN ADICIONAL</span>
+                        <span class="text-slate-400">VOLUMEN</span>
+                    </div>
+                    <div class="my-2 flex items-baseline gap-1">
+                        <span id="kpi-smed-biscuits" class="text-3xl font-extrabold font-mono text-indigo-600">+22.48</span>
+                        <span class="text-xs font-mono text-slate-500">M galletas</span>
+                    </div>
+                    <div class="text-[11px] text-slate-500">
+                        Equivalente a: <b id="kpi-smed-cases" class="text-slate-700 font-mono">+156,174 cajas/año</b>
+                    </div>
+                </div>
+
+                <!-- KPI 4: Payback -->
+                <div class="card-elevated p-4 border-t-4 border-t-teal-500 flex flex-col justify-between">
+                    <div class="flex items-center justify-between text-xs font-mono font-bold text-slate-500 tracking-wider">
+                        <span>PAYBACK DE INVERSIÓN</span>
+                        <span class="inline-flex items-center px-1.5 py-0.5 rounded bg-teal-100 text-teal-800 text-[10px] font-bold">
+                            CAPEX $23.8k
+                        </span>
+                    </div>
+                    <div class="my-2 flex items-baseline gap-1">
+                        <span id="kpi-smed-payback" class="text-3xl font-extrabold font-mono text-teal-600">14.9</span>
+                        <span class="text-xs font-mono text-slate-500">Días</span>
+                    </div>
+                    <div class="text-[11px] text-slate-500">
+                        Ahorro vs comprar máquina nueva: <b class="text-emerald-700 font-semibold">$226,200 USD</b>
+                    </div>
+                </div>
+
+            </div>
+
+            <!-- Panel Interactivo de Simulación con 1-Click Presets -->
+            <div class="card-elevated p-5">
+                <div class="flex flex-col sm:flex-row sm:items-center justify-between mb-4 gap-2">
+                    <div>
+                        <h3 class="text-sm font-bold text-slate-800">Simulador de Impacto Económico SMED (What-If)</h3>
+                        <p class="text-xs text-slate-400">Ajusta los parámetros para evaluar el impacto en capacidad y retorno de inversión</p>
+                    </div>
+
+                    <!-- Botones Rápidos Preconfigurados -->
+                    <div class="inline-flex rounded-lg border border-slate-200 p-0.5 bg-slate-100 text-xs">
+                        <button onclick="setPreset('conservative')" id="preset-conservative" class="btn-preset px-3 py-1.5 rounded-md text-xs font-medium transition">
+                            Conservador (-25%)
+                        </button>
+                        <button onclick="setPreset('recommended')" id="preset-recommended" class="btn-preset active px-3 py-1.5 rounded-md text-xs font-medium transition">
+                            Recomendado (-40%)
+                        </button>
+                        <button onclick="setPreset('aggressive')" id="preset-aggressive" class="btn-preset px-3 py-1.5 rounded-md text-xs font-medium transition">
+                            Clase Mundial (-60%)
+                        </button>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6 bg-slate-50 p-4 rounded-xl border border-slate-200">
+                    <div>
+                        <label class="text-xs font-bold text-slate-700 flex justify-between">
+                            <span>% Reducción Tiempos de Cambio (SMED):</span>
+                            <span id="slider-val-reduction" class="font-mono text-blue-600 font-extrabold">40.0%</span>
+                        </label>
+                        <input id="slider-reduction" type="range" min="10" max="70" step="5" value="40" oninput="onSimulationInput()" class="w-full mt-2 accent-blue-600 cursor-pointer">
+                        <span class="text-[10px] text-slate-400">De 45 min a 15 min en cambios de formato</span>
+                    </div>
+
+                    <div>
+                        <label class="text-xs font-bold text-slate-700 flex justify-between">
+                            <span>Margen de Contribución por Caja ($):</span>
+                            <span id="slider-val-margin" class="font-mono text-emerald-600 font-extrabold">$3.50 USD</span>
+                        </label>
+                        <input id="slider-margin" type="range" min="1.50" max="6.00" step="0.25" value="3.50" oninput="onSimulationInput()" class="w-full mt-2 accent-emerald-600 cursor-pointer">
+                        <span class="text-[10px] text-slate-400">Margen neto de galleta sandwich en retail</span>
+                    </div>
+
+                    <div>
+                        <label class="text-xs font-bold text-slate-700 flex justify-between">
+                            <span>Merma / Scrap en Arranque:</span>
+                            <span id="slider-val-scrap" class="font-mono text-amber-600 font-extrabold">2.0%</span>
+                        </label>
+                        <input id="slider-scrap" type="range" min="0.5" max="5.0" step="0.5" value="2.0" oninput="onSimulationInput()" class="w-full mt-2 accent-amber-600 cursor-pointer">
+                        <span class="text-[10px] text-slate-400">Pérdida por ajuste de peso en primeras galletas</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Fila Inferior: Comparativa Capex SMED vs Nueva Máquina & Cronograma SMED -->
+            <div class="grid grid-cols-1 lg:grid-cols-12 gap-4">
+                
+                <!-- Comparativa Capex (6 cols) -->
+                <div class="lg:col-span-6 card-elevated p-5">
+                    <div class="mb-2">
+                        <h3 class="text-sm font-bold text-slate-800">Decisión de Inversión: SMED vs Comprar Máquina Nueva</h3>
+                        <p class="text-xs text-slate-400">Comparativa de inversión inicial vs beneficio anual obtenido</p>
+                    </div>
+                    <div id="chart-capex-comparison" class="w-full h-64"></div>
+                </div>
+
+                <!-- Desglose de Actividades SMED (6 cols) -->
+                <div class="lg:col-span-6 card-elevated p-5 flex flex-col justify-between">
+                    <div>
+                        <h3 class="text-sm font-bold text-slate-800">Cronograma Hombre-Máquina SMED (45 min &rarr; 15 min)</h3>
+                        <p class="text-xs text-slate-400">Cómo se eliminan 30 minutos de parada en la Llenadora</p>
+                    </div>
+
+                    <div class="space-y-2 mt-3 text-xs">
+                        <div class="p-2.5 bg-slate-50 border border-slate-200 rounded-lg flex justify-between items-center">
+                            <div>
+                                <b class="text-slate-800">1. Desacople de Tareas Externas (5S):</b>
+                                <p class="text-[11px] text-slate-500">Utillaje, boquillas y crema nueva preparados mientras la máquina aún produce.</p>
+                            </div>
+                            <span class="font-mono font-bold text-emerald-600 shrink-0 ml-2">-12 min</span>
+                        </div>
+
+                        <div class="p-2.5 bg-slate-50 border border-slate-200 rounded-lg flex justify-between items-center">
+                            <div>
+                                <b class="text-slate-800">2. Cabezal Gemelo Prelavado & Poka-Yoke:</b>
+                                <p class="text-[11px] text-slate-500">Cambio rápido de conjunto con Tri-Clamp 1/4 de vuelta y galgas fijas.</p>
+                            </div>
+                            <span class="font-mono font-bold text-emerald-600 shrink-0 ml-2">-10 min</span>
+                        </div>
+
+                        <div class="p-2.5 bg-slate-50 border border-slate-200 rounded-lg flex justify-between items-center">
+                            <div>
+                                <b class="text-slate-800">3. Validación Microbiológica ATP en Paralelo:</b>
+                                <p class="text-[11px] text-slate-500">Test rápido de hisopo digital al minuto 12 sin esperar parada de línea.</p>
+                            </div>
+                            <span class="font-mono font-bold text-emerald-600 shrink-0 ml-2">-8 min</span>
+                        </div>
+                    </div>
+
+                    <div class="mt-3 p-2.5 bg-emerald-50 border border-emerald-200 rounded-lg text-xs font-semibold text-emerald-900 flex justify-between">
+                        <span>Tiempo Total de Parada por Cambio:</span>
+                        <span class="font-mono font-black">45 min &rarr; 15 min (-66.7%)</span>
+                    </div>
+                </div>
+
+            </div>
+
+        </div>
+
+        <!-- ================================================================= -->
+        <!-- TAB 4: CONSOLA SQL DUCKDB (EXACTA A PROYECTO 1)                  -->
+        <!-- ================================================================= -->
+        <div id="tab-sql" class="tab-content p-6 space-y-5 hidden">
+            
+            <!-- Banner Superior -->
+            <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-1">
+                <div>
+                    <h2 class="text-2xl font-extrabold text-slate-900 tracking-tight">Consola Analítica ANSI SQL (DuckDB In-Memory)</h2>
+                    <p class="text-xs text-slate-500 font-medium mt-0.5">
+                        Consultas nativas sobre la base de datos columnar en memoria (`fact_events`, `kpi_machines`, `loss_tree`)
+                    </p>
+                </div>
+                <div class="flex items-center gap-3">
+                    <span class="bg-sky-100 border border-sky-300 text-sky-800 text-xs px-3 py-1.5 rounded-lg font-mono font-bold flex items-center gap-1.5">
+                        <i class="fa-solid fa-bolt text-sky-600"></i> Latencia: &lt; 5 ms
+                    </span>
+                </div>
+            </div>
+
+            <!-- Botones Rápidos de Queries Clave -->
+            <div class="card-elevated p-4">
+                <div class="text-xs font-bold text-slate-700 mb-2 font-mono uppercase">Consultas Predefinidas de Auditoría:</div>
+                <div class="flex flex-wrap gap-2">
+                    <button onclick="loadSampleQuery('oee_ranking')" class="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg text-xs font-semibold transition border border-slate-300">
+                        1. Balance OEE de las 10 Máquinas
+                    </button>
+                    <button onclick="loadSampleQuery('filling_stops')" class="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg text-xs font-semibold transition border border-slate-300">
+                        2. Top 5 Paradas de la Llenadora
+                    </button>
+                    <button onclick="loadSampleQuery('cc_breakdown')" class="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg text-xs font-semibold transition border border-slate-300">
+                        3. Desglose de Cambios de Formato (CC)
+                    </button>
+                    <button onclick="loadSampleQuery('speed_gap')" class="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg text-xs font-semibold transition border border-slate-300">
+                        4. Brecha de Velocidad en Cuello de Botella
+                    </button>
+                </div>
+            </div>
+
+            <!-- Editor SQL & Botón Ejecutar -->
+            <div class="card-elevated p-5 space-y-3">
+                <div class="flex justify-between items-center">
+                    <span class="text-xs font-bold text-slate-700 font-mono uppercase"><i class="fa-solid fa-terminal text-blue-600 mr-1.5"></i>Editor SQL</span>
+                    <button onclick="runSqlQuery()" class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-xs font-bold shadow-sm transition flex items-center gap-2">
+                        <i class="fa-solid fa-play"></i>
+                        <span>Ejecutar Consulta</span>
+                    </button>
+                </div>
+                <textarea id="sqlQueryInput" rows="5" class="w-full p-3 font-mono text-xs bg-slate-900 text-slate-100 rounded-lg border border-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500">SELECT Machine, ROUND(SUM(Duration_July_Hours), 2) AS Horas_Parada, COUNT(*) AS Eventos
+FROM fact_events
+WHERE "OEE Category" = 'CC (Changeover Cleaning)'
+GROUP BY Machine
+ORDER BY Horas_Parada DESC
+LIMIT 10;</textarea>
+            </div>
+
+            <!-- Tabla de Resultados SQL -->
+            <div class="card-elevated overflow-hidden">
+                <div class="px-5 py-3 border-b border-slate-200 flex justify-between items-center bg-slate-50">
+                    <span id="sqlStatusText" class="text-xs font-mono text-slate-600 font-semibold">Resultados de la consulta</span>
+                    <span id="sqlTimeBadge" class="text-xs font-mono text-emerald-600 font-bold"></span>
+                </div>
+                <div id="sqlTableContainer" class="overflow-x-auto max-h-96">
+                    <div class="p-8 text-center text-xs text-slate-400 font-mono">
+                        Presiona "Ejecutar Consulta" para ver los resultados de DuckDB
+                    </div>
+                </div>
+            </div>
+
+        </div>
+
+    </main>
+
+    <!-- ===================================================================== -->
+    <!-- 3. JAVASCRIPT DE CONTROL (LIMPIO, REACTIVO Y ROBUSTO)                 -->
+    <!-- ===================================================================== -->
+    <script>
+        let currentLine = 'all';
+        let chartWaterfall = null;
+        let chartLossDonut = null;
+        let chartMachinesOee = null;
+        let chartParetoFilling = null;
+        let chartCapex = null;
+
+        // Inicialización al cargar la página
+        document.addEventListener('DOMContentLoaded', () => {
+            loadKpis();
+            loadLossData();
+            loadMachinesData();
+            runSimulation();
+        });
+
+        // 1. Cambio de Pestaña (Misma lógica que Proyecto 1)
+        function switchTab(tabId) {
+            document.querySelectorAll('.tab-content').forEach(t => t.classList.add('hidden'));
+            document.getElementById(tabId).classList.remove('hidden');
+
+            document.querySelectorAll('.nav-tab-btn').forEach(b => b.classList.remove('active'));
+            const btnMap = {
+                'tab-diagnostico': 'btn-tab-diagnostico',
+                'tab-restriccion': 'btn-tab-restriccion',
+                'tab-smed': 'btn-tab-smed',
+                'tab-sql': 'btn-tab-sql'
+            };
+            if (btnMap[tabId]) document.getElementById(btnMap[tabId]).classList.add('active');
+
+            setTimeout(() => {
+                window.dispatchEvent(new Event('resize'));
+            }, 80);
+        }
+
+        // 2. Cambio de Filtro de Línea
+        function onFilterChange() {
+            currentLine = document.getElementById('lineFilter').value;
+            loadKpis();
+            loadLossData();
+            loadMachinesData();
+        }
+
+        // 3. Cargar KPIs Globales
+        async function loadKpis() {
+            try {
+                const res = await fetch(`/api/kpis?line=${currentLine}&product=all&category=all`);
+                const d = await res.json();
+
+                document.getElementById('kpi-oee').innerText = d.mean_oee.toFixed(2);
+                document.getElementById('kpi-avail').innerText = d.mean_avail.toFixed(2);
+                document.getElementById('kpi-perf').innerText = d.mean_perf.toFixed(2);
+                document.getElementById('kpi-qual').innerText = d.mean_qual.toFixed(2);
+                document.getElementById('kpi-down-hours').innerText = `${d.cc_hours} h en cambios`;
+            } catch (e) {
+                console.error("Error loading KPIs:", e);
+            }
+        }
+
+        // 4. Cargar Gráfico Cascada de Pérdidas y Donut
+        async function loadLossData() {
+            try {
+                const res = await fetch('/api/loss-tree');
+                const data = await res.json();
+
+                // 4.1 Cascada Waterfall OEE
+                const waterfallOptions = {
+                    series: [{
+                        name: 'Horas de Fábrica',
+                        data: [
+                            { x: '1. Tiempo Calendario', y: 744.0 },
+                            { x: '2. Tiempo Planificado', y: 744.0 },
+                            { x: '3. Paradas Disponibilidad', y: -147.9 },
+                            { x: '4. Tiempo en Marcha', y: 596.1 },
+                            { x: '5. Pérdida por Velocidad', y: -154.7 },
+                            { x: '6. Tiempo Neto', y: 441.4 },
+                            { x: '7. Pérdida Scrap (Calidad)', y: -7.8 },
+                            { x: '8. Tiempo Valor Neto', y: 433.6 }
+                        ]
+                    }],
+                    chart: {
+                        type: 'bar',
+                        height: 280,
+                        toolbar: { show: false }
+                    },
+                    plotOptions: {
+                        bar: {
+                            borderRadius: 6,
+                            columnWidth: '50%',
+                            colors: {
+                                ranges: [
+                                    { from: -1000, to: -0.01, color: '#EF4444' },
+                                    { from: 0, to: 440, color: '#10B981' },
+                                    { from: 441, to: 1000, color: '#2563EB' }
+                                ]
+                            }
+                        }
+                    },
+                    dataLabels: {
+                        enabled: true,
+                        formatter: val => Math.abs(val) + ' h',
+                        style: { fontFamily: 'JetBrains Mono', fontSize: '10px' }
+                    },
+                    xaxis: {
+                        labels: { style: { fontSize: '11px', fontWeight: 600 } }
+                    },
+                    yaxis: {
+                        labels: {
+                            formatter: val => val + ' h',
+                            style: { fontFamily: 'JetBrains Mono' }
+                        }
+                    },
+                    tooltip: {
+                        y: { formatter: val => Math.abs(val) + ' horas' }
+                    }
+                };
+
+                if (chartWaterfall) chartWaterfall.destroy();
+                chartWaterfall = new ApexCharts(document.querySelector("#chart-waterfall"), waterfallOptions);
+                chartWaterfall.render();
+
+                // 4.2 Donut de Paradas
+                const cats = ['Cambios y Limpiezas (CC)', 'Averías Mecánicas', 'Parada Mayor (Cat 0)', 'Falta de Orden (NO)', 'Otras Paradas'];
+                const vals = [573.6, 350.1, 132.5, 88.5, 184.2];
+
+                const donutOptions = {
+                    series: vals,
+                    labels: cats,
+                    chart: { type: 'donut', height: 260 },
+                    colors: ['#F59E0B', '#EF4444', '#8B5CF6', '#3B82F6', '#64748B'],
+                    legend: { position: 'bottom', fontSize: '11px' },
+                    plotOptions: {
+                        pie: {
+                            donut: {
+                                size: '65%',
+                                labels: {
+                                    show: true,
+                                    total: {
+                                        show: true,
+                                        label: 'Total Paradas',
+                                        formatter: () => '1,328.9 h'
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    dataLabels: { enabled: false }
+                };
+
+                if (chartLossDonut) chartLossDonut.destroy();
+                chartLossDonut = new ApexCharts(document.querySelector("#chart-loss-donut"), donutOptions);
+                chartLossDonut.render();
+
+            } catch (e) {
+                console.error("Error loading loss data:", e);
+            }
+        }
+
+        // 5. Cargar Datos de Máquinas (Ranking OEE & Pareto Llenadora)
+        async function loadMachinesData() {
+            try {
+                const res = await fetch('/api/machines-overview');
+                const machines = await res.json();
+
+                // Tabla de máquinas
+                const tbody = document.getElementById('table-machines-body');
+                tbody.innerHTML = '';
+                machines.forEach(m => {
+                    const tr = document.createElement('tr');
+                    tr.className = m.is_bottleneck ? 'bg-rose-50/80 font-bold' : 'hover:bg-slate-50 transition';
+
+                    const badgeStatus = m.status === 'CRITICAL' 
+                        ? '<span class="px-2 py-0.5 rounded bg-rose-100 text-rose-800 text-[10px] font-bold">CRÍTICO</span>'
+                        : (m.status === 'WARNING' 
+                            ? '<span class="px-2 py-0.5 rounded bg-amber-100 text-amber-800 text-[10px] font-bold">ALERTA</span>'
+                            : '<span class="px-2 py-0.5 rounded bg-emerald-100 text-emerald-800 text-[10px] font-bold">ÓPTIMO</span>');
+
+                    tr.innerHTML = `
+                        <td class="p-3 text-slate-900 font-sans">${m.is_bottleneck ? '🔴 ' : ''}<b>${m.machine}</b></td>
+                        <td class="p-3 text-slate-600 font-sans">${m.line}</td>
+                        <td class="p-3 text-right text-slate-500">${m.planned_hours.toFixed(1)} h</td>
+                        <td class="p-3 text-right text-slate-700">${m.operating_hours.toFixed(1)} h</td>
+                        <td class="p-3 text-right text-amber-600 font-bold">${m.availability_pct.toFixed(1)}%</td>
+                        <td class="p-3 text-right text-indigo-600 font-bold">${m.performance_pct.toFixed(1)}%</td>
+                        <td class="p-3 text-right text-emerald-600 font-bold">${m.quality_pct.toFixed(1)}%</td>
+                        <td class="p-3 text-right font-black ${m.oee_pct < 50 ? 'text-rose-600' : 'text-slate-900'}">${m.oee_pct.toFixed(1)}%</td>
+                        <td class="p-3 text-center font-sans">${badgeStatus}</td>
+                    `;
+                    tbody.appendChild(tr);
+                });
+
+                // Gráfico Ranking OEE de Máquinas (Barras Horizontales)
+                const sorted = [...machines].sort((a, b) => a.oee_pct - b.oee_pct);
+                const machineNames = sorted.map(m => m.machine_short || m.machine);
+                const oeeVals = sorted.map(m => m.oee_pct);
+                const colors = sorted.map(m => m.is_bottleneck ? '#EF4444' : (m.oee_pct < 55 ? '#F59E0B' : '#2563EB'));
+
+                const optionsRanking = {
+                    series: [{ name: 'OEE Real (%)', data: oeeVals }],
+                    chart: { type: 'bar', height: 280, toolbar: { show: false } },
+                    plotOptions: {
+                        bar: { horizontal: true, distributed: true, borderRadius: 6, barHeight: '60%' }
+                    },
+                    colors: colors,
+                    dataLabels: {
+                        enabled: true,
+                        formatter: val => val.toFixed(1) + '%',
+                        style: { fontFamily: 'JetBrains Mono', fontSize: '11px', colors: ['#0F172A'] },
+                        offsetX: 6
+                    },
+                    xaxis: {
+                        max: 100,
+                        labels: { formatter: val => val + '%', style: { fontFamily: 'JetBrains Mono' } }
+                    },
+                    yaxis: {
+                        categories: machineNames,
+                        labels: { style: { fontSize: '11px', fontWeight: 600 } }
+                    },
+                    legend: { show: false },
+                    tooltip: { y: { formatter: val => val.toFixed(2) + '%' } }
+                };
+
+                if (chartMachinesOee) chartMachinesOee.destroy();
+                chartMachinesOee = new ApexCharts(document.querySelector("#chart-machines-oee"), optionsRanking);
+                chartMachinesOee.render();
+
+                // Pareto de Paradas en la Llenadora
+                const paretoOptions = {
+                    series: [
+                        { name: 'Horas de Parada', type: 'column', data: [123.5, 45.2, 28.6, 14.1, 7.8] },
+                        { name: '% Acumulado', type: 'line', data: [58.5, 79.9, 93.5, 96.8, 100.0] }
+                    ],
+                    chart: { height: 280, type: 'line', toolbar: { show: false } },
+                    stroke: { width: [0, 3], curve: 'smooth' },
+                    colors: ['#2563EB', '#F59E0B'],
+                    plotOptions: { bar: { borderRadius: 6, columnWidth: '40%' } },
+                    xaxis: {
+                        categories: ['Cambio/Limpieza (CC)', 'Avería Mecánica', 'Falta de Masa', 'Ajuste Boquillas', 'Otros'],
+                        labels: { style: { fontSize: '11px', fontWeight: 600 } }
+                    },
+                    yaxis: [
+                        { title: { text: 'Horas de Parada' }, labels: { style: { fontFamily: 'JetBrains Mono' } } },
+                        { opposite: true, max: 100, title: { text: '% Acumulado' }, labels: { formatter: val => val + '%', style: { fontFamily: 'JetBrains Mono' } } }
+                    ]
+                };
+
+                if (chartParetoFilling) chartParetoFilling.destroy();
+                chartParetoFilling = new ApexCharts(document.querySelector("#chart-pareto-filling"), paretoOptions);
+                chartParetoFilling.render();
+
+            } catch (e) {
+                console.error("Error loading machines data:", e);
+            }
+        }
+
+        // 6. Simulación Financiera SMED
+        function setPreset(preset) {
+            document.querySelectorAll('.btn-preset').forEach(b => b.classList.remove('active'));
+            document.getElementById('preset-' + preset).classList.add('active');
+
+            if (preset === 'conservative') {
+                document.getElementById('slider-reduction').value = 25;
+            } else if (preset === 'recommended') {
+                document.getElementById('slider-reduction').value = 40;
+            } else if (preset === 'aggressive') {
+                document.getElementById('slider-reduction').value = 60;
+            }
+            onSimulationInput();
+        }
+
+        function onSimulationInput() {
+            const red = parseFloat(document.getElementById('slider-reduction').value);
+            const margin = parseFloat(document.getElementById('slider-margin').value);
+            const scrap = parseFloat(document.getElementById('slider-scrap').value);
+
+            document.getElementById('slider-val-reduction').innerText = red.toFixed(1) + '%';
+            document.getElementById('slider-val-margin').innerText = '$' + margin.toFixed(2) + ' USD';
+            document.getElementById('slider-val-scrap').innerText = scrap.toFixed(1) + '%';
+
+            runSimulation();
+        }
+
+        async function runSimulation() {
+            const red = parseFloat(document.getElementById('slider-reduction').value);
+            const margin = parseFloat(document.getElementById('slider-margin').value);
+            const scrap = parseFloat(document.getElementById('slider-scrap').value);
+
+            try {
+                const res = await fetch('/api/simulate-smed', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        reduction_pct: red,
+                        margin_per_case: margin,
+                        startup_scrap_pct: scrap,
+                        speed_u_h: 38506,
+                        ot_shifts_saved: 26,
+                        capex_audited: 23800
+                    })
+                });
+                const d = await res.json();
+
+                document.getElementById('kpi-smed-benefit').innerText = '+$' + d.total_benefit_year.toLocaleString('en-US', {maximumFractionDigits: 0});
+                document.getElementById('kpi-smed-hours').innerText = '+' + d.hours_saved_month.toFixed(1);
+                document.getElementById('kpi-smed-hours-year').innerText = '+' + d.hours_saved_year.toFixed(1) + ' h/año';
+                document.getElementById('kpi-smed-biscuits').innerText = '+' + (d.net_biscuits_year / 1e6).toFixed(2);
+                document.getElementById('kpi-smed-cases').innerText = '+' + d.cases_year.toLocaleString('en-US') + ' cajas/año';
+                document.getElementById('kpi-smed-payback').innerText = d.payback_days.toFixed(1);
+
+                renderCapexChart(d.total_benefit_year);
+            } catch (e) {
+                console.error("Error in simulation:", e);
+            }
+        }
+
+        function renderCapexChart(benefit) {
+            const capexOptions = {
+                series: [
+                    { name: 'Inversión Requerida ($ USD)', data: [23800, 250000] },
+                    { name: 'Beneficio Anual Obtenido ($ USD)', data: [benefit, benefit] }
+                ],
+                chart: { type: 'bar', height: 260, toolbar: { show: false } },
+                plotOptions: { bar: { horizontal: false, columnWidth: '45%', borderRadius: 6 } },
+                colors: ['#EF4444', '#10B981'],
+                xaxis: {
+                    categories: ['Metodología Lean SMED', 'Comprar Máquina Nueva'],
+                    labels: { style: { fontSize: '11px', fontWeight: 600 } }
+                },
+                yaxis: {
+                    labels: { formatter: val => '$' + (val / 1000).toFixed(0) + 'k', style: { fontFamily: 'JetBrains Mono' } }
+                },
+                dataLabels: {
+                    enabled: true,
+                    formatter: val => '$' + (val / 1000).toFixed(0) + 'k',
+                    style: { fontFamily: 'JetBrains Mono', fontSize: '10px' }
+                },
+                tooltip: { y: { formatter: val => '$' + val.toLocaleString() + ' USD' } }
+            };
+
+            if (chartCapex) chartCapex.destroy();
+            chartCapex = new ApexCharts(document.querySelector("#chart-capex-comparison"), capexOptions);
+            chartCapex.render();
+        }
+
+        // 7. Consola SQL DuckDB
+        const sampleQueries = {
+            oee_ranking: `SELECT Machine, Line, Planned_Hours, Operating_Hours, Availability_pct, Performance_pct, Quality_pct, OEE_pct
+FROM kpi_machines
+ORDER BY OEE_pct ASC;`,
+            filling_stops: `SELECT Machine, "OEE Category", ROUND(SUM(Duration_July_Hours), 2) AS Horas_Parada, COUNT(*) AS Total_Eventos
+FROM fact_events
+WHERE Machine = 'Biscuit Filling Machine'
+GROUP BY 1, 2
+ORDER BY Horas_Parada DESC;`,
+            cc_breakdown: `SELECT 
+    CASE WHEN Duration_July_Hours <= 1.0 THEN 'Cambio Rutinario SMED (<=60 min)' ELSE 'Avería Oculta en CC (>60 min)' END AS Tipo_Parada,
+    COUNT(*) AS Eventos,
+    ROUND(SUM(Duration_July_Hours), 2) AS Horas_Totales
+FROM fact_events
+WHERE "OEE Category" = 'CC (Changeover Cleaning)'
+GROUP BY 1;`,
+            speed_gap: `SELECT Product, COUNT(*) AS Lotes, ROUND(SUM(TotalBiscuitsMade), 0) AS Total_Galletas,
+ROUND(SUM(TotalBiscuitsMade) / NULLIF(SUM(Duration_July_Hours), 0), 0) AS Velocidad_Real_uh
+FROM fact_events
+WHERE Machine = 'Biscuit Filling Machine' AND "OEE Category" = 'NO (No Order)'
+GROUP BY Product
+ORDER BY Total_Galletas DESC;`
+        };
+
+        function loadSampleQuery(key) {
+            if (sampleQueries[key]) {
+                document.getElementById('sqlQueryInput').value = sampleQueries[key];
+                runSqlQuery();
+            }
+        }
+
+        async function runSqlQuery() {
+            const query = document.getElementById('sqlQueryInput').value.trim();
+            const statusEl = document.getElementById('sqlStatusText');
+            const timeEl = document.getElementById('sqlTimeBadge');
+            const container = document.getElementById('sqlTableContainer');
+
+            statusEl.innerText = "Ejecutando consulta en DuckDB...";
+            timeEl.innerText = "";
+
+            try {
+                const res = await fetch('/api/sql', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ query: query })
+                });
+                const data = await res.json();
+
+                if (!data.success) {
+                    statusEl.innerText = "Error en la consulta";
+                    container.innerHTML = `<div class="p-4 text-xs font-mono text-rose-600 bg-rose-50">${data.error}</div>`;
+                    return;
+                }
+
+                statusEl.innerText = `Mostrando ${data.rows.length} de ${data.total_rows} filas`;
+                timeEl.innerText = `⏱ ${data.execution_ms} ms`;
+
+                if (data.rows.length === 0) {
+                    container.innerHTML = `<div class="p-6 text-xs text-slate-400 font-mono text-center">La consulta no retornó filas</div>`;
+                    return;
+                }
+
+                let html = '<table class="w-full text-xs text-left font-mono"><thead class="bg-slate-100 text-slate-700 font-bold border-b border-slate-200"><tr>';
+                data.columns.forEach(col => {
+                    html += `<th class="p-2.5 whitespace-nowrap">${col}</th>`;
+                });
+                html += '</tr></thead><tbody class="divide-y divide-slate-200">';
+
+                data.rows.forEach(row => {
+                    html += '<tr class="hover:bg-slate-50">';
+                    data.columns.forEach(col => {
+                        const val = row[col];
+                        html += `<td class="p-2.5 whitespace-nowrap">${val !== null ? val : ''}</td>`;
+                    });
+                    html += '</tr>';
+                });
+                html += '</tbody></table>';
+
+                container.innerHTML = html;
+            } catch (e) {
+                console.error("Error executing SQL:", e);
+                statusEl.innerText = "Error de red al ejecutar SQL";
+            }
+        }
+    </script>
+</body>
+</html>

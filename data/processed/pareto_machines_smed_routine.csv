@@ -1,0 +1,11 @@
+Machine,Horas_SMED,Eventos_SMED,%_Individual,Horas_Acum,%_Acumulado
+Biscuit Filling Machine,123.52,1957,58.5,123.52,58.5
+Biscuit Sprinkling Machine,44.73,1064,21.18,168.25,79.68
+Biscuit Pressing Machine,23.38,566,11.07,191.63,90.75
+Biscuit Mixing Machine,4.97,104,2.35,196.6,93.1
+Biscuit Jam Machine,3.73,47,1.77,200.33,94.87
+Biscuit Boxing Machine,3.5,99,1.66,203.83,96.53
+Packaging Heat Machine,3.43,93,1.62,207.26,98.15
+Biscuit Forming Machine,2.63,22,1.25,209.89,99.4
+Biscuit Heating Machine,1.12,3,0.53,211.01,99.93
+Biscuit Topping Machine,0.15,11,0.07,211.16,100.0

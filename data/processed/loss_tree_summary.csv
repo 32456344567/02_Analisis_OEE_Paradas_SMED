@@ -1,0 +1,7 @@
+Loss_Subcategory,Eventos,Horas,%_Tiempo_Total
+1. Mantenimiento Preventivo (PM Oficial),6,3.57,0.16
+2. Parada Mayor No Codificada (Cat 0 - Overhaul/Avería),12,132.53,5.9
+3. Cambio y Limpieza Rutinario (SMED Real <=60m),3966,211.17,9.41
+4. Avería / Mant. Correctivo Oculto en CC (>60m),55,350.13,15.59
+5. Operación Neta / Marcha Activa,3996,1543.83,68.76
+6. Otros (Run Time),9,4.0,0.18

@@ -1,0 +1,11 @@
+Machine,Type,Scheduled_Hours,Operating_Hours,CC_Stoppage_Hours,Availability_%,Performance_%,Quality_%,OEE_%
+Biscuit Boxing Machine,Boxing,255.0,167.7,87.2,65.77,78.5,98.2,50.7
+Biscuit Filling Machine,Filling,566.9,380.9,182.5,67.19,56.41,100.0,37.9
+Biscuit Forming Machine,Forming,338.6,271.5,67.1,80.17,78.5,98.2,61.8
+Biscuit Heating Machine,Heating,180.9,117.2,63.7,64.8,78.5,98.2,49.95
+Biscuit Jam Machine,Filling,75.6,70.8,4.8,93.63,78.5,98.2,72.18
+Biscuit Mixing Machine,Mixing,319.3,267.0,52.4,83.6,78.5,98.2,64.45
+Biscuit Pressing Machine,Forming,111.0,71.5,39.5,64.42,78.5,98.2,49.66
+Biscuit Sprinkling Machine,Topping,109.6,49.0,60.5,44.77,100.0,98.04,43.89
+Biscuit Topping Machine,Topping,24.8,24.6,0.2,99.4,78.5,98.2,76.62
+Packaging Heat Machine,Packaging,127.0,123.6,3.4,97.3,78.5,98.2,75.0
