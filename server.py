@@ -193,7 +193,7 @@ def get_kpis(line: str = "all", product: str = "all", category: str = "all"):
     }
 
 @app.get("/api/machines-overview")
-def get_machines_overview():
+def get_machines_overview(line: str = "all"):
     with db_lock:
         df_kpi = duck_conn.execute("""
             SELECT 
@@ -208,6 +208,11 @@ def get_machines_overview():
             FROM kpi_machines
             ORDER BY OEE_pct ASC
         """).fetchdf()
+
+    if line == "line1":
+        df_kpi = df_kpi[df_kpi['Machine'].isin(LINE1_MACHINES)]
+    elif line == "line2":
+        df_kpi = df_kpi[df_kpi['Machine'].isin(LINE2_MACHINES)]
 
     result = []
     for _, r in df_kpi.iterrows():
@@ -231,12 +236,42 @@ def get_machines_overview():
     return result
 
 @app.get("/api/loss-tree")
-def get_loss_tree():
+def get_loss_tree(line: str = "all"):
     with db_lock:
-        df_loss = duck_conn.execute("SELECT * FROM loss_tree ORDER BY Horas DESC").fetchdf()
-        
-        # Breakdown of CC for Line 1 specifically
-        q_cc = """
+        where_line = ""
+        if line == "line1":
+            quoted = ", ".join([f"'{m}'" for m in LINE1_MACHINES])
+            where_line = f"WHERE Machine IN ({quoted})"
+        elif line == "line2":
+            quoted = ", ".join([f"'{m}'" for m in LINE2_MACHINES])
+            where_line = f"WHERE Machine IN ({quoted})"
+
+        if line in ["line1", "line2"]:
+            q_cat = f"""
+                SELECT 
+                    CASE 
+                        WHEN "OEE Category" = 'CC (Changeover Cleaning)' THEN 'Cambios y Limpiezas (CC)'
+                        WHEN "OEE Category" = 'NO (No Order)' THEN 'Falta de Pedido / Sin Demanda (NO)'
+                        WHEN "OEE Category" = '0' THEN 'Parada Mayor / Avería No Codificada (Cat 0)'
+                        WHEN "OEE Category" = 'PM (Maintenance)' THEN 'Mantenimiento Preventivo (PM)'
+                        ELSE 'Otras Paradas'
+                    END AS Loss_Subcategory,
+                    COUNT(*) AS Eventos,
+                    ROUND(SUM(Duration_July_Hours), 2) AS Horas
+                FROM fact_events
+                {where_line}
+                GROUP BY 1
+                ORDER BY Horas DESC
+            """
+            df_loss = duck_conn.execute(q_cat).fetchdf()
+            tot_h = df_loss['Horas'].sum()
+            df_loss['%_Tiempo_Total'] = (df_loss['Horas'] / tot_h * 100.0).round(2) if tot_h > 0 else 0
+        else:
+            df_loss = duck_conn.execute("SELECT * FROM loss_tree ORDER BY Horas DESC").fetchdf()
+
+        # Breakdown of CC
+        cc_filter = (' AND ' + where_line.replace('WHERE ', '')) if where_line else ''
+        q_cc = f"""
             SELECT 
                 CASE 
                     WHEN Duration_July_Hours <= 1.0 THEN 'Cambio Rutinario SMED (<=60 min)'
@@ -245,7 +280,7 @@ def get_loss_tree():
                 ROUND(SUM(Duration_July_Hours), 2) AS total_h,
                 COUNT(*) AS events
             FROM fact_events
-            WHERE \"OEE Category\" = 'CC (Changeover Cleaning)'
+            WHERE "OEE Category" = 'CC (Changeover Cleaning)' {cc_filter}
             GROUP BY 1
         """
         df_cc_split = duck_conn.execute(q_cc).fetchdf()
