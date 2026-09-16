@@ -1,4 +1,5 @@
 import os
+import re
 import json
 import time
 import threading
@@ -515,13 +516,102 @@ def get_pre_mortem_amfe():
 class SqlRequest(BaseModel):
     query: str
 
+# Tablas cargadas en memoria por este servidor — única superficie de datos
+# que la consola SQL pública debe poder tocar.
+SQL_ALLOWED_TABLES = (
+    "fact_events", "kpi_machines", "loss_tree", "products",
+    "target_speeds", "machines", "smed_scenarios",
+)
+
+# Palabras reservadas de SQL que no son nombres de tabla/columna reales y por
+# tanto no disparan el chequeo de whitelist (evita falsos positivos en "select",
+# "from", "where", "and", "or", "as", "on", "group", "by", "order", etc.).
+SQL_KEYWORDS_SKIP = {
+    "select", "with", "from", "where", "and", "or", "not", "in", "as",
+    "on", "join", "left", "right", "inner", "outer", "group", "by",
+    "order", "limit", "offset", "asc", "desc", "having", "distinct",
+    "case", "when", "then", "else", "end", "is", "null", "between",
+    "like", "union", "all", "cross", "using", "count", "sum", "avg",
+    "min", "max", "over", "partition", "cast", "true", "false",
+}
+
+SQL_TIMEOUT_SECONDS = 5
+SQL_ROW_LIMIT = 100
+
+def validate_readonly_sql(raw_query: str) -> str:
+    clean_q = raw_query.strip().rstrip(";")
+    if not clean_q:
+        raise ValueError("La consulta está vacía.")
+    if ";" in clean_q:
+        raise ValueError("Solo se permite una única sentencia SQL por consulta.")
+    lowered = clean_q.lower()
+    if not (lowered.startswith("select") or lowered.startswith("with")):
+        raise ValueError("Solo se permiten consultas de lectura (SELECT / WITH).")
+
+    # Alias de CTE (WITH alias AS (...), alias2 AS (...)) cuentan como tablas
+    # válidas dentro de esta misma consulta.
+    cte_aliases = set(re.findall(r"(?:with|,)\s+([a-zA-Z_][a-zA-Z0-9_]*)\s+as\s*\(", lowered))
+    allowed = set(SQL_ALLOWED_TABLES) | cte_aliases
+
+    # Whitelist: toda referencia a FROM/JOIN debe apuntar a una de las tablas
+    # cargadas en memoria (o a un alias de CTE definido arriba). Esto bloquea
+    # funciones de lectura de archivo de DuckDB (read_csv_auto, read_text,
+    # glob, rutas de archivo, pragma_*...) que un blocklist de keywords no cubre.
+    table_refs = re.findall(r"\b(?:from|join)\s+([a-zA-Z_][a-zA-Z0-9_\.\"]*)", lowered)
+    if not table_refs:
+        raise ValueError("La consulta debe incluir al menos un FROM sobre una tabla permitida.")
+    for ref in table_refs:
+        table_name = ref.strip('"').split(".")[-1]
+        if table_name not in allowed:
+            raise ValueError(
+                f"Tabla no permitida: '{table_name}'. Tablas disponibles: {', '.join(SQL_ALLOWED_TABLES)}."
+            )
+
+    # Cualquier otro identificador "tipo función" (palabra seguida de "(")
+    # que no sea una función SQL agregada/estándar queda bloqueado, para
+    # evitar llamadas a funciones de tabla o de sistema de DuckDB.
+    func_calls = set(re.findall(r"\b([a-zA-Z_][a-zA-Z0-9_]*)\s*\(", lowered))
+    suspicious_funcs = func_calls - SQL_KEYWORDS_SKIP - {
+        "round", "abs", "coalesce", "lower", "upper", "trim", "date_trunc",
+        "extract", "strftime", "concat", "length", "substr", "row_number",
+        "rank", "dense_rank", "ifnull", "nullif",
+    }
+    if suspicious_funcs:
+        raise ValueError(f"Función no permitida en consola de solo lectura: {', '.join(sorted(suspicious_funcs))}")
+
+    if "limit" not in lowered:
+        clean_q = f"{clean_q}\nLIMIT {SQL_ROW_LIMIT}"
+    return clean_q
+
+def _run_with_timeout(conn, sql: str, timeout_s: float) -> pd.DataFrame:
+    """Ejecuta sql en un hilo aparte y cancela la consulta vía conn.interrupt()
+    si excede timeout_s (DuckDB no soporta un statement_timeout nativo)."""
+    result = {}
+
+    def _worker():
+        try:
+            result["df"] = conn.execute(sql).fetchdf()
+        except Exception as e:
+            result["error"] = e
+
+    t = threading.Thread(target=_worker, daemon=True)
+    t.start()
+    t.join(timeout_s)
+    if t.is_alive():
+        conn.interrupt()
+        t.join(timeout_s)
+        raise TimeoutError(f"La consulta excedió el límite de {timeout_s}s y fue cancelada.")
+    if "error" in result:
+        raise result["error"]
+    return result["df"]
+
 @app.post("/api/sql")
 def execute_sql(req: SqlRequest):
     t0 = time.time()
     try:
-        clean_q = req.query.strip().rstrip(";")
+        clean_q = validate_readonly_sql(req.query)
         with db_lock:
-            res_df = duck_conn.execute(clean_q).fetchdf()
+            res_df = _run_with_timeout(duck_conn, clean_q, SQL_TIMEOUT_SECONDS)
         ms = round((time.time() - t0) * 1000, 2)
         total_rows = len(res_df)
         res_limited = res_df.head(100).copy()

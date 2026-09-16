@@ -209,8 +209,8 @@ fin_records = [
     ('Margen de Contribución Unitario Estimado', 'USD / Caja', 3.50, 3.50, 0.0, 'Margen industrial promedio en galletas sandwich'),
     ('Beneficio Bruto Anual por Capacidad Liberada', 'USD / Año', 0.0, 546609, 546609, '156,174 cajas * $3.50 USD/caja'),
     ('Ahorro en Horas Extras de Cuadrilla de Turno', 'USD / Año', 0.0, 35000, 35000, 'Eliminación de turnos de fin de semana para cumplir plan'),
-    ('Inversión Requerida (Utillajes Tri-Clamp, Carros 5S, Galgas)', 'USD (Capex)', 0.0, 4800, 4800, 'Capex Cero (Gasto menor OPEX de utillaje rápido)'),
-    ('Retorno de Inversión (Payback)', 'Días', 0.0, 3.0, -3.0, '($4,800 / $581,609 anual) * 365 días = 3 días'),
+    ('Inversión Requerida (Cabezal sanitario, tanque encamisado, kit de cambio rápido)', 'USD (Capex)', 0.0, 23800, 23800, 'Capex menor (frente a $250k de una línea nueva)'),
+    ('Retorno de Inversión (Payback)', 'Días', 0.0, 14.9, -14.9, '($23,800 / $581,609 anual) * 365 días = 14.9 días'),
     ('Alternativa de Inversión Tradicional (Nueva Llenadora)', 'USD (Capex)', 250000, 0, -250000, 'Comprar otra línea requeriría $250k y 9 meses de entrega')
 ]
 

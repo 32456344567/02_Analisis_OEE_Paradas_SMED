@@ -10,7 +10,7 @@
 
 El presente caso de negocio evalúa la viabilidad económica y el retorno financiero del proyecto **Lean SMED (Single-Minute Exchange of Die)** aplicado al cuello de botella de la fábrica (**`Biscuit Filling Machine`**, Línea 1).
 
-Frente a la propuesta tradicional de ingeniería de solicitar **$250,000 USD de inversión en capital (Capex)** para comprar e instalar una nueva línea de llenado con un tiempo de entrega de **9 meses**, este proyecto demuestra que mediante la estandarización operativa y utillaje rápido de bajo costo (**$4,800 USD**) se pueden liberar **592.9 horas de producción al año**.
+Frente a la propuesta tradicional de ingeniería de solicitar **$250,000 USD de inversión en capital (Capex)** para comprar e instalar una nueva línea de llenado con un tiempo de entrega de **9 meses**, este proyecto demuestra que mediante la estandarización operativa y utillaje rápido de bajo costo (**$23,800 USD**) se pueden liberar **592.9 horas de producción al año**.
 
 ```
 ┌────────────────────────────────────────────────────────────────────────────────────────┐
@@ -27,7 +27,7 @@ Frente a la propuesta tradicional de ingeniería de solicitar **$250,000 USD de 
 ├────────────────────────────────────────────────────────┼───────────────────────────────┤
 │ IMPACTO ECONÓMICO ANUAL TOTAL                          │ +$581,609 USD / AÑO           │
 │ PERÍODO DE RECUPERACIÓN AUDITADO (PAYBACK REAL)        │ 14.9 DÍAS DE OPERACIÓN        │
-│ RETORNO SOBRE LA INVERSIÓN (ROI DEL PROYECTO)          │ 2,443% EN EL PRIMER AÑO       │
+│ RETORNO SOBRE LA INVERSIÓN (ROI DEL PROYECTO)          │ 2,344% EN EL PRIMER AÑO       │
 └────────────────────────────────────────────────────────┴───────────────────────────────┘
 ```
 
@@ -47,7 +47,7 @@ La Línea 1 de galletas sandwich de Grandma EDNA's se encuentra operando a su m�
 ### La Solución Lean: Desbloquear la Capacidad Oculta (Capex Cero)
 * El principio de la **Teoría de Restricciones (TOC)** establece:  
   *"Una hora ganada en el cuello de botella es una hora ganada para toda la fábrica."*
-* Con una inversión marginal de **$4,800 USD en utillaje rápido** (abrazaderas sanitarias *Tri-Clamp*, conexiones *Push-fit*, galgas fijas *Poka-Yoke* y carros móviles 5S), se reduce el 40% del tiempo de cambio rutinario, liberando **49.41 horas al mes de producción activa de inmediato (en solo 8 semanas)**.
+* Con una inversión marginal de **$23,800 USD en utillaje rápido** (cabezal sanitario de recambio, tanque encamisado y kit de cambio rápido), se reduce el 40% del tiempo de cambio rutinario, liberando **49.41 horas al mes de producción activa de inmediato (en solo 8 semanas)**.
 
 ---
 
@@ -95,14 +95,14 @@ Para presentar un caso de negocio robusto ante el Comité de Dirección, evaluam
 
 | Escenario | % Reducción SMED | Horas Ahorradas / Año | Galletas Vendibles / Año | Cajas Adicionales / Año | Beneficio Económico Total ($ USD) | Payback (Días) |
 | :--- | :---: | :---: | :---: | :---: | :---: | :---: |
-| **Pesimista** | 15% | 222.3 h | 8,433,412 u | 58,565 cajas | $229,978 USD | 7.6 días |
-| **Conservador** | 25% | 370.6 h | 14,055,686 u | 97,609 cajas | $376,631 USD | 4.7 días |
-| **Caso Base (Objetivo)** | **40%** | **592.9 h** | **22,489,098 u** | **156,174 cajas** | **$581,609 USD** | **3.0 días** |
-| **Optimista** | 50% | 741.1 h | 28,111,372 u | 195,218 cajas | $718,262 USD | 2.4 días |
-| **World Class** | 60% | 889.4 h | 33,733,647 u | 234,261 cajas | $854,915 USD | 2.1 días |
+| **Pesimista** | 15% | 222.3 h | 8,433,412 u | 58,565 cajas | $229,978 USD | 37.8 días |
+| **Conservador** | 25% | 370.6 h | 14,055,686 u | 97,609 cajas | $376,631 USD | 23.1 días |
+| **Caso Base (Objetivo)** | **40%** | **592.9 h** | **22,489,098 u** | **156,174 cajas** | **$581,609 USD** | **14.9 días** |
+| **Optimista** | 50% | 741.1 h | 28,111,372 u | 195,218 cajas | $718,262 USD | 12.1 días |
+| **World Class** | 60% | 889.4 h | 33,733,647 u | 234,261 cajas | $854,915 USD | 10.2 días |
 
 > [!TIP]
-> Incluso en el **Escenario Pesimista (solo 15% de reducción)**, el proyecto genera más de **$229,000 USD de beneficio anual** y recupera la inversión total de $4,800 USD en **menos de 8 días**.
+> Incluso en el **Escenario Pesimista (solo 15% de reducción)**, el proyecto genera más de **$229,000 USD de beneficio anual** y recupera la inversión total de $23,800 USD en **menos de 38 días**.
 
 ---
 

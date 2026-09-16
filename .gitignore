@@ -26,3 +26,4 @@ $RECYCLE.BIN/
 # Temporary files and logs
 *.log
 scratch/
+PROJECT_TRACKER.md
